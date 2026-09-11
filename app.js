@@ -38,6 +38,7 @@ function getColor(feature, mode) {
 let buildingsLayer = null;
 let geojsonData = null;
 let colorMode = "building_type";
+let attributeDisplayMode = "show";
 
 // 4. Load data --------------------------------------------------------------
 fetch(GEOJSON_URL)
@@ -68,7 +69,16 @@ function buildLayer(data) {
       fillOpacity: 0.75
     }),
     onEachFeature: (feature, layer) => {
-      layer.on("click", () => showAttributes(feature));
+      layer.on("click", () => {
+        if (attributeDisplayMode === "show") {
+          showAttributes(feature);
+          layer.bindPopup(popupHTML(feature)).openPopup();
+        } else {
+          document.getElementById("attribute-table").innerHTML =
+            `<p class="muted">Attribute display is disabled.</p>`;
+          layer.closePopup();
+        }
+      });
       layer.bindPopup(popupHTML(feature));
     }
   });
@@ -113,7 +123,24 @@ document.getElementById("color-attribute").addEventListener("change", (e) => {
   buildLegend();
 });
 
-// 9. Legend -----------------------------------------------------------------------
+// 9. Attribute display control -----------------------------------------------
+document.getElementById("attribute-display").addEventListener("change", (e) => {
+  attributeDisplayMode = e.target.value;
+
+  if (attributeDisplayMode === "none") {
+    document.getElementById("attribute-table").innerHTML =
+      `<p class="muted">No attributes selected.</p>`;
+
+    if (buildingsLayer) {
+      buildingsLayer.eachLayer((layer) => layer.closePopup());
+    }
+  } else {
+    document.getElementById("attribute-table").innerHTML =
+      `<p class="muted">Click a building on the map to see its attributes.</p>`;
+  }
+});
+
+// 10. Legend -----------------------------------------------------------------------
 function buildLegend() {
   const el = document.getElementById("legend");
   el.innerHTML = "";
